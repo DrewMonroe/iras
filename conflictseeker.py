@@ -143,11 +143,21 @@ def main():
             res = match_ext(ann, t4, t6)
             out.write("%s %s %d\n" % (ann.pfx, str(ann.aspath), res))
             if res == 0:
+                if ann.pfx in valid or ann.pfx in invalid:
+                    continue
                 unknown.update([ann.pfx])
             elif res == 1:
                 valid.update([ann.pfx])
+                if ann.pfx in unknown:
+                    unknown.remove(ann.pfx)
+                if ann.pfx in invalid:
+                    invalid.remove(ann.pfx)
             elif res == 2:
+                if ann.pfx in valid:
+                    continue
                 invalid.update([ann.pfx])
+                if ann.pfx in unknown:
+                    unknown.remove(ann.pfx)
             else:
                 raise Exception("Unknown match result %d" % res)
     print("Done matching BGP to ROAs")
@@ -157,6 +167,8 @@ def main():
         for ipfx in invalid:
             if isinstance(ipfx, ipaddress.IPv4Network):
                 outi.write("%s\n" % str(ipfx))
+            else:
+                print(type(ipfx))
 
 
 if __name__ == '__main__':
