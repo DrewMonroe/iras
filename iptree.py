@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
-# BGPcrunch - BGP analysis toolset
-# Copyright (C) 2014-2015 Tomas Hlavacek (tmshlvck@gmail.com)
+# IRAS - Internet Routing Analysis System
+# Copyright (C) 2014-2018 Tomas Hlavacek (tmshlvck@gmail.com)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,9 +66,8 @@ class IPLookupTree(object):
         :param net: IPv4/6 prefix
         :param data: Bound data (arbitrary) object
         """
-        if not (isinstance(net, ipaddress.IPv4Network) or isinstance(net, ipaddress.IPv6Network)):
-            net = ipaddress.ip_network(net)
-
+    
+        net = IPLookupTree._normalize_pfx(net)
         bits = list(IPLookupTree._bits(net.network_address.packed))
         index=self.root
         for bi in range(0,net.prefixlen):
@@ -93,7 +92,18 @@ class IPLookupTree(object):
             return ip
         else:
             return ipaddress.ip_network(ip)
- 
+
+    @staticmethod
+    def _normalize_addr(ip):
+        """
+            Create IPv4Address or IPv6Address out of a supplied IPv46Network, string or address.
+        """
+        if isinstance(ip, ipaddress.IPv4Address) or isinstance(ip, ipaddress.IPv6Address):
+            return ip
+        elif isinstance(ip, ipaddress.IPv4Network) or isinstance(ip, ipaddress.IPv6Network):
+            return ip.network_address
+        else:
+            return ipaddress.ip_address(ip)
 
     def _lookupAllLevelsNode(self, ip, maxMatches=0):
         """ Internal match helper.
@@ -109,10 +119,7 @@ class IPLookupTree(object):
 
         index = self.root
         # match address
-        if type(ip) == ipaddress.IPv4Network or type(ip) == ipaddress.IPv6Network:
-            a = ip.network_address
-        else:
-            a = ip
+        a = IPLookupTree._normalize_addr(ip)
         for (bi,b) in enumerate(IPLookupTree._bits(a.packed)):
             if index.end and index.end.overlaps(ip): # match
                 yield index
